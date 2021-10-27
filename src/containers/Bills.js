@@ -36,12 +36,12 @@ export default class {
       .bills()
       .get()
       .then(snapshot => {
-        const bills = snapshot.docs
+        let bills = snapshot.docs
           .map(doc => {
             try {
               return {
                 ...doc.data(),
-                date: formatDate(doc.data().date),
+                date: doc.data().date,
                 status: formatStatus(doc.data().status)
               }
             } catch(e) {
@@ -57,6 +57,10 @@ export default class {
           })
           .filter(bill => bill.email === userEmail)
           console.log('length', bills.length)
+          bills=bills.sort((a,b)=>b.date<a.date?1:-1)
+          bills.forEach(bill=>{
+            bill.date=formatDate(bill.date)
+          })
         return bills
       })
       .catch(error => error)
