@@ -7,9 +7,9 @@ export const formatDate = (dateStr) => {
     const month = mo.charAt(0).toUpperCase() + mo.slice(1)
     return `${parseInt(da)} ${month.substr(0,3)}. ${ye.toString()}`
   }
-  else{
-    return`Date invalide`
-  }
+
+  return "Date invalide";
+
 }
 
 export const formatStatus = (status) => {
@@ -23,9 +23,5 @@ export const formatStatus = (status) => {
   }
 }
 const dateIsValide=(dateStr)=>{
-  if(dateStr.match(/^\d{4}\-\d{1,2}\-\d{1,2}$/)){
-    return true
-  }else{
-    return false
-  }
+    return dateStr.match(/^\d{4}\-\d{1,2}\-\d{1,2}$/);
 }
