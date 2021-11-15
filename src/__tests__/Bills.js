@@ -1,88 +1,124 @@
-import { screen } from "@testing-library/dom"
+import { screen,fireEvent } from "@testing-library/dom"
+import '@testing-library/jest-dom'
 import BillsUI from "../views/BillsUI.js"
 import { bills } from "../fixtures/bills.js"
-import {ROUTES} from "../constants/routes"
+import {ROUTES, ROUTES_PATH} from "../constants/routes"
+import Router from "../app/Router.js"
 import firebase from "../__mocks__/firebase"
 import { localStorageMock } from "../__mocks__/localStorage.js"
 import Bills from "../containers/Bills.js"
-import userEvent from "@testing-library/user-event"
-import VerticalLayout from "../views/VerticalLayout.js"
+import Firestore from "../app/Firestore.js"
+
 
 describe("Given I am connected as an employee", () => {
   describe("When I am on Bills Page", () => {
     test("Then bill icon in vertical layout should be highlighted", () => {
-      const html = VerticalLayout(120)
-      document.body.innerHTML = html
-      //to-do write expect expression
-      expect(screen.getByText('Billed')).toBeTruthy()
-    })
-    test("Then there is no bills should tabel be empty",()=>{
-      const onNavigate=(pathname)=>{
-        document.body.innerHTML=ROUTES({pathname})
-      }
-      Object.defineProperty(window,'localStorage',{value:localStorageMock})
-      window.localStorage.setItem('user',JSON.stringify({
-        type:'Employee'
-      }))
-      const bill=new Bills({
-      document,onNavigate,firestore:null,localStorage:window.localStorage})
-      const getBill=jest.fn(bill.getBills())
-      expect(getBill).toHaveReturnedTimes(0)
-    })
-    test("Then i click on Action icon modal should be open", ()=>{
-      const onNavigate=(pathname)=>{
-        document.body.innerHTML=ROUTES({pathname})
-      }
-      Object.defineProperty(window,'localStorage',{value:localStorageMock})
-      window.localStorage.setItem('user',JSON.stringify({
-        type:'Employee'
-      }))
-      const bill=new Bills({
-      document,onNavigate,firestore:null,localStorage:window.localStorage})
-      const html=BillsUI({data:bills})
-      document.body.innerHTML=html
-      const icons=screen.getAllByTestId('icon-eye')
-      const handleClickIconEye1=jest.fn(bill.handleClickIconEye(icons[0]))
-      icons[0].addEventListener('click',handleClickIconEye1)
-      userEvent.click(icons[0])
-      expect(handleClickIconEye1).toHaveBeenCalled()
-      const modale=screen.getByTestId("modal-fade")
-      expect(modale).toBeTruthy()
-
-    })
+      jest.mock("../app/Firestore");
+      Firestore.bills = () => ({ bills, get: jest.fn().mockResolvedValue() });
+      Object.defineProperty(window, "localStorage", {
+        value: localStorageMock,
+      });
+      window.localStorage.setItem(
+        "user",
+        JSON.stringify({
+          type: "Employee",
+        })
+      );
+      const pathname = ROUTES_PATH["Bills"];
+      Object.defineProperty(window, "location", { value: { hash: pathname } });
+      document.body.innerHTML = `<div id="root"></div>`;
+      Router();
+      expect(
+        screen.getByTestId("icon-window").classList.contains("active-icon")
+      ).toBe(true);
+    });
     test("Then bills should be ordered from earliest to latest", () => {
-      const html = BillsUI({ data: bills })
-      document.body.innerHTML = html
-      const dates = screen.getAllByText(/^(19|20)\d\d[- /.](0[1-9]|1[012])[- /.](0[1-9]|[12][0-9]|3[01])$/i).map(a => a.innerHTML)
-      const antiChrono = (a, b) => b-a
-      const datesSorted = [...dates].sort(antiChrono)
-      expect(dates).toEqual(datesSorted)
-    })
-    describe("when i am on Bills Page and i click on new Bill Button",()=>{
-      test("Then form new bill should be open",()=>{
-          const onNavigate=(pathname)=>{
-            document.body.innerHTML=ROUTES({pathname})
-          }
-          Object.defineProperty(window,'localStorage', {value :localStorageMock})
-          window.localStorage.setItem('user',JSON.stringify({
-            type:'Employee'
-          }))
-          const bill=new Bills({
-            document,onNavigate,firestore:null,localStorage:window.localStorage})
-          const html=BillsUI({data:bills})
-          document.body.innerHTML=html
-          const buttonNewBill=screen.getByTestId('btn-new-bill')
-          const handleClickNewBill=jest.fn((e)=>bill.handleClickNewBill(e))
-          const getbills=jest.fn(bill.getBills())
-          buttonNewBill.addEventListener('click',handleClickNewBill)
-          userEvent.click(buttonNewBill)
-          expect(handleClickNewBill).toHaveBeenCalled()
-          
-      })
-    })
-  })
-})
+      const html = BillsUI({ data: bills });
+      document.body.innerHTML = html;
+      const dates = screen
+        .getAllByText(
+          /^(19|20)\d\d[- /.](0[1-9]|1[012])[- /.](0[1-9]|[12][0-9]|3[01])$/i
+        )
+        .map((a) => a.innerHTML);
+      const antiChrono = (a, b) => b-a;
+      const datesSorted = [...dates].sort(antiChrono);
+      expect(dates).toEqual(datesSorted);
+    });
+  });
+});
 
+describe("Given I am connected as Employee and I am on Bills page", () => {
+  describe("When I click on the New Bill button", () => {
+    test("Then, it should render NewBill page", () => {
+      Object.defineProperty(window, "localStorage", {
+        value: localStorageMock,
+      });
+      window.localStorage.setItem(
+        "user",
+        JSON.stringify({
+          type: "Employee",
+        })
+      );
+      const html = BillsUI({ data: [] });
+      document.body.innerHTML = html;
+      const onNavigate = (pathname) => {
+        document.body.innerHTML = ROUTES({ pathname });
+      };
+      const firestore = null;
+      const allBills = new Bills({
+        document,
+        onNavigate,
+        firestore,
+        localStorage: window.localStorage,
+      });
+
+      const handleClickNewBill = jest.fn(allBills.handleClickNewBill);
+      const billBtn = screen.getByTestId("btn-new-bill");
+      billBtn.addEventListener("click", handleClickNewBill);
+      fireEvent.click(billBtn);
+      expect(screen.getAllByText("Envoyer une note de frais")).toBeTruthy();
+    });
+  });
+});
+
+describe("Given I am connected as Employee and I am on Bills page", () => {
+  describe("When I click on the icon eye", () => {
+    test("A modal should open", () => {
+      Object.defineProperty(window, "localStorage", {
+        value: localStorageMock,
+      });
+      window.localStorage.setItem(
+        "user",
+        JSON.stringify({
+          type: "Employee",
+        })
+      );
+      const html = BillsUI({ data: bills });
+      document.body.innerHTML = html;
+      const onNavigate = (pathname) => {
+        document.body.innerHTML = ROUTES({ pathname });
+      };
+      const firestore = null;
+      const allBills = new Bills({
+        document,
+        onNavigate,
+        firestore,
+        localStorage: window.localStorage,
+      });
+
+      $.fn.modal = jest.fn();
+      const eye = screen.getAllByTestId("icon-eye")[0];
+      const handleClickIconEye = jest.fn(() =>
+        allBills.handleClickIconEye(eye)
+      );
+      eye.addEventListener("click", handleClickIconEye);
+      fireEvent.click(eye);
+      expect(handleClickIconEye).toHaveBeenCalled();
+      const modale = document.getElementById("modaleFile");
+      expect(modale).toBeTruthy();
+    });
+  });
+});
 //test d'intégration Get
 describe("Given I am connected as Employee",()=>{
   describe("When I navigate to bills page",()=>{

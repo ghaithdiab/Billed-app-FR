@@ -50,17 +50,14 @@ export default class {
               console.log(e,'for',doc.data())
               return {
                 ...doc.data(),
-                date: doc.data().date,
+                date:formatDate(doc.data().date) ,
                 status: formatStatus(doc.data().status)
               }
             }
           })
           .filter(bill => bill.email === userEmail)
-          console.log('length', bills.length)
-          bills=bills.sort((a,b)=>b.date>a.date?1:-1)
-          bills.forEach(bill=>{
-            bill.date=formatDate(bill.date)
-          })
+          // console.log('length', bills.length)
+          // bills=bills.sort((a,b)=>b.date>a.date?1:-1)
         return bills
       })
       .catch(error => error)
