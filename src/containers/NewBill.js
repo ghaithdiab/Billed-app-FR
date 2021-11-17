@@ -16,26 +16,25 @@ export default class NewBill {
     new Logout({ document, localStorage, onNavigate })
   }
   handleChangeFile = e => {
-    const file = this.document.querySelector(`input[data-testid="file"]`).files[0]
+    let file = this.document.querySelector(`input[data-testid="file"]`).files[0]
     let filePath = e.target.value.split(/\\/g)
     const fileName = filePath[filePath.length - 1];
     const allowedExt=/(\.jpg|\.jpeg|\.png)$/i
     const extension = fileName.split(".").pop();
     const matchExtension = extension.toLowerCase().match(allowedExt);
-    this.handleFirestoreStorage(fileName, file, matchExtension);
-
-  }
-  handleFirestoreStorage = (fileName, file, matchExtension) => {
-    if (this.firestore) {
+    if(matchExtension && this.firestore){
       this.firestore.storage
-        .ref(`justificatifs/${fileName}`)
-        .put(file)
-        .then((snapshot) => snapshot.ref.getDownloadURL())
-        .then((url) => {
-          this.fileUrl = url;
-          this.fileName = matchExtension ? fileName : "invalid";
-        });
+          .ref(`justificatifs/${fileName}`)
+          .put(file)
+          .then((snapshot) => snapshot.ref.getDownloadURL())
+          .then((url) => {
+            this.fileUrl = url;
+            this.fileName = fileName
+          });
+    }else{
+      file=e.target.value=''
     }
+
   }
   handleSubmit = e => {
     e.preventDefault()
